@@ -32,7 +32,8 @@ class c4_LifecycleHooks : LifecycleHooksBase() {
     @Test
     fun no_subscription_no_gains() {
         val hooksTriggered = CopyOnWriteArrayList<String>()
-        val temperatureFlux = room_temperature_service() //todo: change this line only
+        val temperatureFlux =
+            room_temperature_service().doOnSubscribe { hooksTriggered.add("subscribe") } //todo: change this line only
         StepVerifier.create(temperatureFlux.take(5))
             .expectNextCount(5)
             .verifyComplete()
@@ -46,7 +47,8 @@ class c4_LifecycleHooks : LifecycleHooksBase() {
     @Test
     fun be_there_early() {
         val hooksTriggered = CopyOnWriteArrayList<String>()
-        val temperatureFlux = room_temperature_service() //todo: change this line only
+        val temperatureFlux =
+            room_temperature_service().doOnSubscribe { hooksTriggered.add("before subscribe") } //todo: change this line only
         StepVerifier.create(
             temperatureFlux.take(5).doOnSubscribe { s: Subscription? -> hooksTriggered.add("subscribe") })
             .expectNextCount(5)
@@ -61,7 +63,8 @@ class c4_LifecycleHooks : LifecycleHooksBase() {
     @Test
     fun atomic_counter() {
         val counter = AtomicInteger(0)
-        val temperatureFlux = room_temperature_service() //todo: change this line only
+        val temperatureFlux =
+            room_temperature_service().doOnNext { counter.incrementAndGet() } //todo: change this line only
         StepVerifier.create(temperatureFlux)
             .expectNextCount(20)
             .verifyComplete()
@@ -75,7 +78,8 @@ class c4_LifecycleHooks : LifecycleHooksBase() {
     @Test
     fun successfully_executed() {
         val completed = AtomicBoolean(false)
-        val temperatureFlux = room_temperature_service() //todo: change this line only
+        val temperatureFlux =
+            room_temperature_service().doOnComplete { completed.set(true) } //todo: change this line only
         StepVerifier.create(temperatureFlux.skip(20))
             .expectNextCount(0)
             .verifyComplete()
@@ -89,7 +93,7 @@ class c4_LifecycleHooks : LifecycleHooksBase() {
     @Test
     fun need_to_cancel() {
         val canceled = AtomicBoolean(false)
-        val temperatureFlux = room_temperature_service() //todo: change this line only
+        val temperatureFlux = room_temperature_service().doOnCancel { canceled.set(true) } //todo: change this line only
         StepVerifier.create(temperatureFlux.take(0))
             .expectNextCount(0)
             .verifyComplete()
@@ -104,7 +108,8 @@ class c4_LifecycleHooks : LifecycleHooksBase() {
     @Test
     fun terminator() {
         val hooksTriggeredCounter = AtomicInteger(0)
-        val temperatureFlux = room_temperature_service() //todo: change this line only
+        val temperatureFlux =
+            room_temperature_service().doOnTerminate { hooksTriggeredCounter.incrementAndGet() } //todo: change this line only
         StepVerifier.create(temperatureFlux.take(0))
             .expectNextCount(0)
             .verifyComplete()
@@ -125,7 +130,8 @@ class c4_LifecycleHooks : LifecycleHooksBase() {
     @Test
     fun one_to_catch_them_all() {
         val hooksTriggeredCounter = AtomicInteger(0)
-        val temperatureFlux = room_temperature_service() //todo: change this line only
+        val temperatureFlux =
+            room_temperature_service().doFinally { hooksTriggeredCounter.incrementAndGet() } //todo: change this line only
         StepVerifier.create(temperatureFlux.take(0))
             .expectNextCount(0)
             .verifyComplete()
@@ -151,7 +157,7 @@ class c4_LifecycleHooks : LifecycleHooksBase() {
             .doFirst { sideEffects.add("three") }
             .doFirst { sideEffects.add("two") }
             .doFirst { sideEffects.add("one") }
-        val orderOfExecution: List<String> = mutableListOf("todo", "todo", "todo") //todo: change this line only
+        val orderOfExecution: List<String> = mutableListOf("one", "two", "three") //todo: change this line only
         StepVerifier.create(just)
             .expectNext(true)
             .verifyComplete()
@@ -171,7 +177,13 @@ class c4_LifecycleHooks : LifecycleHooksBase() {
     @Test
     fun one_to_rule_them_all() {
         val signals = CopyOnWriteArrayList<String>()
-        val flux = Flux.just(1, 2, 3) //todo: change this line only
+        val flux = Flux.just(1, 2, 3).doOnEach {
+            when {
+                it.isOnNext -> signals.add("ON_NEXT")
+                it.isOnComplete -> signals.add("ON_COMPLETE")
+                else -> {}
+            }
+        } //todo: change this line only
         StepVerifier.create(flux)
             .expectNextCount(3)
             .verifyComplete()
