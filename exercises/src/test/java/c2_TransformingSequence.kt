@@ -25,7 +25,7 @@ class c2_TransformingSequence : TransformingSequenceBase() {
      */
     @Test
     fun transforming_sequence() {
-        val numbersFlux = numerical_service() //todo change only this line
+        val numbersFlux = numerical_service().map { it + 1 } //todo change only this line
 
         //StepVerifier is used for testing purposes
         //ignore it for now, or explore it independently
@@ -45,7 +45,14 @@ class c2_TransformingSequence : TransformingSequenceBase() {
         val numbersFlux = numerical_service_2()
 
         //todo: do your changes here
-        val resultSequence: Flux<String>? = null
+//        val resultSequence: Flux<String>? = null
+        val resultSequence: Flux<String>? = numbersFlux.map {
+            when {
+                it > 0 -> ">"
+                it == 0 -> "="
+                else -> "<"
+            }
+        }
 
         //don't change code below
         StepVerifier.create(resultSequence)
@@ -62,7 +69,8 @@ class c2_TransformingSequence : TransformingSequenceBase() {
     @Test
     fun cast() {
         val numbersFlux = object_service()
-            .map { i: Any? -> i as String? } //todo: change this line only
+//            .map { i: Any? -> i as String? } //todo: change this line only
+            .cast(String::class.java)
         StepVerifier.create(numbersFlux)
             .expectNext("1", "2", "3", "4", "5")
             .verifyComplete()
@@ -74,7 +82,7 @@ class c2_TransformingSequence : TransformingSequenceBase() {
      */
     @Test
     fun maybe() {
-        val result = maybe_service() //todo: change this line only
+        val result = maybe_service().switchIfEmpty(Mono.just("no results")) //todo: change this line only
         StepVerifier.create(result)
             .expectNext("no results")
             .verifyComplete()
@@ -87,8 +95,8 @@ class c2_TransformingSequence : TransformingSequenceBase() {
     @Test
     fun sequence_sum() {
         //todo: change code as you need
-        val sum: Mono<Int>? = null
-        numerical_service()
+//        val sum: Mono<Int>? = null
+        val sum: Mono<Int>? = numerical_service().reduce { t, u -> t + u }
 
         //don't change code below
         StepVerifier.create(sum)
@@ -102,7 +110,7 @@ class c2_TransformingSequence : TransformingSequenceBase() {
      */
     @Test
     fun sum_each_successive() {
-        val sumEach = numerical_service() //todo: do your changes here
+        val sumEach = numerical_service().scan { t, u -> t + u } //todo: do your changes here
         StepVerifier.create(sumEach)
             .expectNext(1, 3, 6, 10, 15, 21, 28, 36, 45, 55)
             .verifyComplete()
@@ -117,7 +125,7 @@ class c2_TransformingSequence : TransformingSequenceBase() {
      */
     @Test
     fun sequence_starts_with_zero() {
-        val result = numerical_service() //todo: change this line only
+        val result = numerical_service().scan(0) { _, u -> u } //todo: change this line only
         StepVerifier.create(result)
             .expectNext(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
             .verifyComplete()
