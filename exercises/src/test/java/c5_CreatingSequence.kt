@@ -237,13 +237,21 @@ class c5_CreatingSequence {
      */
     @Test
     fun generate_programmatically() {
-        val generateFlux = Flux.generate { sink: SynchronousSink<Int?>? -> }
+        val generateFlux = Flux.generate<Int> {
+            //todo: fix following code so it emits values from 0 to 5 and then completes
+
+        }
 
         //------------------------------------------------------
-        val createFlux = Flux.create { sink: FluxSink<Int?>? -> }
+        val createFlux = Flux.create<Int> {
+            //todo: fix following code so it emits values from 0 to 5 and then completes
+
+        }
 
         //------------------------------------------------------
-        val pushFlux = Flux.push { sink: FluxSink<Int?>? -> }
+        val pushFlux = Flux.push<Int> {
+            //todo: fix following code so it emits values from 0 to 5 and then completes
+        }
         StepVerifier.create(generateFlux)
             .expectNext(0, 1, 2, 3, 4, 5)
             .verifyComplete()
