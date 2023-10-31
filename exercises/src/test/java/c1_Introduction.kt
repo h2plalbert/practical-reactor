@@ -1,5 +1,6 @@
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
+import java.time.Duration
 import java.util.*
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
@@ -32,7 +33,7 @@ class c1_Introduction : IntroductionBase() {
     @Test
     fun hello_world() {
         val serviceResult = hello_world_service()
-        val result: String? = null //todo: change this line only
+        val result = serviceResult.block() //todo: change this line only
         Assertions.assertEquals("Hello World!", result)
     }
 
@@ -46,7 +47,7 @@ class c1_Introduction : IntroductionBase() {
             IllegalStateException::class.java
         ) {
             val serviceResult = unresponsiveService()
-            val result: String? = null //todo: change this line only
+            val result = serviceResult.block(Duration.ofSeconds(1)) //todo: change this line only
         }
         val expectedMessage = "Timeout on blocking read for 1"
         val actualMessage = exception.message
@@ -60,7 +61,7 @@ class c1_Introduction : IntroductionBase() {
     @Test
     fun empty_service() {
         val serviceResult = emptyService()
-        val optionalServiceResult: Optional<String>? = null //todo: change this line only
+        val optionalServiceResult: Optional<String>? = serviceResult.block()?.let { Optional.of(it) } ?: Optional.empty() //todo: change this line only
         Assertions.assertTrue(optionalServiceResult!!.isEmpty)
         Assertions.assertTrue(emptyServiceIsCalled.get())
     }
@@ -75,7 +76,7 @@ class c1_Introduction : IntroductionBase() {
     @Test
     fun multi_result_service() {
         val serviceResult = multiResultService()
-        val result = serviceResult.toString() //todo: change this line only
+        val result = serviceResult.blockFirst() //todo: change this line only
         Assertions.assertEquals("valid result", result)
     }
 
@@ -87,7 +88,8 @@ class c1_Introduction : IntroductionBase() {
     @Test
     fun fortune_top_five() {
         val serviceResult = fortuneTop5()
-        val results = emptyList<String>() //todo: change this line only
+        val results = serviceResult.toIterable().toList()
+        //todo: change this line only
         Assertions.assertEquals(
             mutableListOf("Walmart", "Amazon", "Apple", "CVS Health", "UnitedHealth Group"),
             results
@@ -112,7 +114,7 @@ class c1_Introduction : IntroductionBase() {
         val companyList = CopyOnWriteArrayList<String>()
         val serviceResult = fortuneTop5()
         serviceResult
-            .doOnNext { e: String -> companyList.add(e) } //todo: add an operator here, don't use any blocking operator!
+            .doOnNext { e: String -> companyList.add(e) }.subscribe() //todo: add an operator here, don't use any blocking operator!
         Thread.sleep(1000) //bonus: can you explain why this line is needed?
         Assertions.assertEquals(
             mutableListOf("Walmart", "Amazon", "Apple", "CVS Health", "UnitedHealth Group"),
@@ -135,7 +137,7 @@ class c1_Introduction : IntroductionBase() {
     fun leaving_blocking_world_behind() {
         val serviceCallCompleted = AtomicReference(false)
         val companyList = CopyOnWriteArrayList<String>()
-        fortuneTop5() //todo: change this line only
+        fortuneTop5().subscribe({companyList.add(it)},{},{serviceCallCompleted.set(true)}) //todo: change this line only
         Thread.sleep(1000)
         Assertions.assertTrue(serviceCallCompleted.get())
         Assertions.assertEquals(
