@@ -25,7 +25,7 @@ class c3_FilteringSequence : FilteringSequenceBase() {
      */
     @Test
     fun girls_are_made_of_sugar_and_spice() {
-        val shortListed = popular_girl_names_service() //todo: change this line only
+        val shortListed = popular_girl_names_service().filter { p -> p.length <= 4 } //todo: change this line only
         StepVerifier.create(shortListed)
             .expectNext("Emma", "Ava", "Mia", "Luna", "Ella")
             .verifyComplete()
@@ -37,8 +37,9 @@ class c3_FilteringSequence : FilteringSequenceBase() {
      */
     @Test
     fun needle_in_a_haystack() {
-        val strings: Flux<String>? = null
-        mashed_data_service() //todo: change this line only
+        var strings: Flux<String>? = null
+        strings = mashed_data_service().ofType(String::class.java) //todo: change this line only
+
         StepVerifier.create(strings)
             .expectNext("1", "String.class")
             .verifyComplete()
@@ -49,7 +50,7 @@ class c3_FilteringSequence : FilteringSequenceBase() {
      */
     @Test
     fun economical() {
-        val items = duplicated_records_service() //todo: change this line only, use only one operator
+        val items = duplicated_records_service().distinct() //todo: change this line only, use only one operator
         StepVerifier.create(items)
             .expectNext("1", "2", "3", "4", "5")
             .verifyComplete()
@@ -64,8 +65,7 @@ class c3_FilteringSequence : FilteringSequenceBase() {
     @Test
     fun watch_out_for_the_spiders() {
         //todo: change code as you need
-        val firstResult = Mono.empty<String>()
-        fragile_service()
+        val firstResult = fragile_service().next()
 
         //don't change code below
         StepVerifier.create(firstResult)
@@ -78,7 +78,7 @@ class c3_FilteringSequence : FilteringSequenceBase() {
      */
     @Test
     fun dont_take_more_then_you_need() {
-        val numbers = number_service() //todo: change this line only
+        val numbers = number_service().take(100) //todo: change this line only
         StepVerifier.create(numbers)
             .expectNextCount(100)
             .verifyComplete()
@@ -89,7 +89,7 @@ class c3_FilteringSequence : FilteringSequenceBase() {
      */
     @Test
     fun not_a_binary_search() {
-        val numbers = number_service() //todo: change this line only
+        val numbers = number_service().takeLast(100) //todo: change this line only
         StepVerifier.create(numbers)
             .expectNextMatches { i: Int -> i >= 200 }
             .expectNextCount(99)
@@ -101,7 +101,7 @@ class c3_FilteringSequence : FilteringSequenceBase() {
      */
     @Test
     fun golden_middle() {
-        val numbers = number_service() //todo: do your changes here
+        val numbers = number_service().skip(100).take(100) //todo: do your changes here
         StepVerifier.create(numbers)
             .expectNextMatches { i: Int -> i >= 100 }
             .expectNextCount(99)
