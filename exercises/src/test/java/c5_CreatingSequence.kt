@@ -38,10 +38,8 @@ class c5_CreatingSequence {
     @Test
     fun value_I_already_have_mono() {
         val valueIAlreadyHave = "value"
-        val valueIAlreadyHaveMono: Mono<String>? = null //todo: change this line only
-        StepVerifier.create(valueIAlreadyHaveMono)
-            .expectNext("value")
-            .verifyComplete()
+        val valueIAlreadyHaveMono: Mono<String>? = Mono.just(valueIAlreadyHave) //todo: change this line only
+        StepVerifier.create(valueIAlreadyHaveMono).expectNext("value").verifyComplete()
     }
 
     /**
@@ -50,9 +48,8 @@ class c5_CreatingSequence {
     @Test
     fun potentially_null_mono() {
         val potentiallyNull: String? = null
-        val potentiallyNullMono: Mono<String>? = null //todo change this line only
-        StepVerifier.create(potentiallyNullMono)
-            .verifyComplete()
+        val potentiallyNullMono: Mono<String>? = Mono.justOrEmpty(potentiallyNull) //todo change this line only
+        StepVerifier.create(potentiallyNullMono).verifyComplete()
     }
 
     /**
@@ -61,10 +58,8 @@ class c5_CreatingSequence {
     @Test
     fun optional_value() {
         val optionalValue = Optional.of("optional")
-        val optionalMono: Mono<String>? = null //todo: change this line only
-        StepVerifier.create(optionalMono)
-            .expectNext("optional")
-            .verifyComplete()
+        val optionalMono: Mono<String>? = Mono.justOrEmpty(optionalValue) //todo: change this line only
+        StepVerifier.create(optionalMono).expectNext("optional").verifyComplete()
     }
 
     /**
@@ -77,10 +72,8 @@ class c5_CreatingSequence {
             println("You are incrementing a counter via Callable!")
             callableCounter.incrementAndGet()
         }
-        val callableCounterMono: Mono<Int>? = null //todo: change this line only
-        StepVerifier.create(callableCounterMono!!.repeat(2))
-            .expectNext(1, 2, 3)
-            .verifyComplete()
+        val callableCounterMono: Mono<Int>? = Mono.fromCallable(callable) //todo: change this line only
+        StepVerifier.create(callableCounterMono!!.repeat(2)).expectNext(1, 2, 3).verifyComplete()
     }
 
     /**
@@ -93,10 +86,8 @@ class c5_CreatingSequence {
             println("You are incrementing a counter via Future!")
             futureCounter.incrementAndGet()
         }
-        val futureCounterMono: Mono<Int>? = null //todo: change this line only
-        StepVerifier.create(futureCounterMono)
-            .expectNext(1)
-            .verifyComplete()
+        val futureCounterMono: Mono<Int>? = Mono.fromFuture(completableFuture) //todo: change this line only
+        StepVerifier.create(futureCounterMono).expectNext(1).verifyComplete()
     }
 
     /**
@@ -109,9 +100,8 @@ class c5_CreatingSequence {
             runnableCounter.incrementAndGet()
             println("You are incrementing a counter via Runnable!")
         }
-        val runnableMono: Mono<Int>? = null //todo: change this line only
-        StepVerifier.create(runnableMono!!.repeat(2))
-            .verifyComplete()
+        val runnableMono: Mono<Int>? = Mono.fromRunnable(runnable) //todo: change this line only
+        StepVerifier.create(runnableMono!!.repeat(2)).verifyComplete()
         Assertions.assertEquals(3, runnableCounter.get())
     }
 
@@ -120,9 +110,8 @@ class c5_CreatingSequence {
      */
     @Test
     fun acknowledged() {
-        val acknowledged: Mono<String>? = null //todo: change this line only
-        StepVerifier.create(acknowledged)
-            .verifyComplete()
+        val acknowledged: Mono<String>? = Mono.empty() //todo: change this line only
+        StepVerifier.create(acknowledged).verifyComplete()
     }
 
     /**
@@ -130,11 +119,9 @@ class c5_CreatingSequence {
      */
     @Test
     fun seen() {
-        val seen: Mono<String>? = null //todo: change this line only
-        StepVerifier.create(seen!!.timeout(Duration.ofSeconds(5)))
-            .expectSubscription()
-            .expectNoEvent(Duration.ofSeconds(4))
-            .verifyTimeout(Duration.ofSeconds(5))
+        val seen: Mono<String>? = Mono.never() //todo: change this line only
+        StepVerifier.create(seen!!.timeout(Duration.ofSeconds(5))).expectSubscription()
+            .expectNoEvent(Duration.ofSeconds(4)).verifyTimeout(Duration.ofSeconds(5))
     }
 
     /**
@@ -142,10 +129,8 @@ class c5_CreatingSequence {
      */
     @Test
     fun trouble_maker() {
-        val trouble: Mono<String>? = null //todo: change this line
-        StepVerifier.create(trouble)
-            .expectError(IllegalStateException::class.java)
-            .verify()
+        val trouble: Mono<String>? = Mono.error(IllegalStateException()) //todo: change this line
+        StepVerifier.create(trouble).expectError(IllegalStateException::class.java).verify()
     }
 
     /**
@@ -154,10 +139,8 @@ class c5_CreatingSequence {
     @Test
     fun from_array() {
         val array = arrayOf(1, 2, 3, 4, 5)
-        val arrayFlux: Flux<Int>? = null //todo: change this line only
-        StepVerifier.create(arrayFlux)
-            .expectNext(1, 2, 3, 4, 5)
-            .verifyComplete()
+        val arrayFlux: Flux<Int>? = Flux.fromArray(array) //todo: change this line only
+        StepVerifier.create(arrayFlux).expectNext(1, 2, 3, 4, 5).verifyComplete()
     }
 
     /**
@@ -166,10 +149,8 @@ class c5_CreatingSequence {
     @Test
     fun from_list() {
         val list: List<String> = mutableListOf("1", "2", "3", "4", "5")
-        val listFlux: Flux<String>? = null //todo: change this line only
-        StepVerifier.create(listFlux)
-            .expectNext("1", "2", "3", "4", "5")
-            .verifyComplete()
+        val listFlux: Flux<String>? = Flux.fromIterable(list) //todo: change this line only
+        StepVerifier.create(listFlux).expectNext("1", "2", "3", "4", "5").verifyComplete()
     }
 
     /**
@@ -178,10 +159,8 @@ class c5_CreatingSequence {
     @Test
     fun from_stream() {
         val stream = Stream.of("5", "6", "7", "8", "9")
-        val streamFlux: Flux<String>? = null //todo: change this line only
-        StepVerifier.create(streamFlux)
-            .expectNext("5", "6", "7", "8", "9")
-            .verifyComplete()
+        val streamFlux: Flux<String>? = Flux.fromStream(stream) //todo: change this line only
+        StepVerifier.create(streamFlux).expectNext("5", "6", "7", "8", "9").verifyComplete()
     }
 
     /**
@@ -189,15 +168,10 @@ class c5_CreatingSequence {
      */
     @Test
     fun interval() {
-        val interval: Flux<Long>? = null //todo: change this line only
+        val interval: Flux<Long>? = Flux.interval(Duration.ofSeconds(1)) //todo: change this line only
         println("Interval: ")
-        StepVerifier.create(interval!!.take(3).doOnNext { x: Long? -> println(x) })
-            .expectSubscription()
-            .expectNext(0L)
-            .expectNoEvent(Duration.ofMillis(900))
-            .expectNext(1L)
-            .expectNoEvent(Duration.ofMillis(900))
-            .expectNext(2L)
+        StepVerifier.create(interval!!.take(3).doOnNext { x: Long? -> println(x) }).expectSubscription().expectNext(0L)
+            .expectNoEvent(Duration.ofMillis(900)).expectNext(1L).expectNoEvent(Duration.ofMillis(900)).expectNext(2L)
             .verifyComplete()
     }
 
@@ -206,10 +180,9 @@ class c5_CreatingSequence {
      */
     @Test
     fun range() {
-        val range: Flux<Int>? = null //todo: change this line only
+        val range: Flux<Int>? = Flux.range(-5, 11) //todo: change this line only
         println("Range: ")
-        StepVerifier.create(range!!.doOnNext { x: Int? -> println(x) })
-            .expectNext(-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5)
+        StepVerifier.create(range!!.doOnNext { x: Int? -> println(x) }).expectNext(-5, -4, -3, -2, -1, 0, 1, 2, 3, 4, 5)
             .verifyComplete()
     }
 
@@ -220,10 +193,10 @@ class c5_CreatingSequence {
     @Test
     fun repeat() {
         val counter = AtomicInteger(0)
-        val repeated: Flux<Int>? = null //todo: change this line
+        val callable = Callable { counter.incrementAndGet() }
+        val repeated: Flux<Int> = Flux.defer { Flux.just(callable.call()) }.repeat(10).take(10) //todo: change this line
         println("Repeat: ")
-        StepVerifier.create(repeated!!.doOnNext { x: Int? -> println(x) })
-            .expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        StepVerifier.create(repeated!!.doOnNext { x: Int? -> println(x) }).expectNext(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
             .verifyComplete()
     }
 
@@ -237,30 +210,34 @@ class c5_CreatingSequence {
      */
     @Test
     fun generate_programmatically() {
-        val generateFlux = Flux.generate<Int> {
+        val generateFlux = Flux.generate({ 0 }) { state, sink ->
             //todo: fix following code so it emits values from 0 to 5 and then completes
-
+            if (state <= 5) sink.next(state) else sink.complete()
+            state + 1
         }
 
         //------------------------------------------------------
-        val createFlux = Flux.create<Int> {
+        val createFlux = Flux.create<Int> { sink ->
             //todo: fix following code so it emits values from 0 to 5 and then completes
-
+            for (i in 0..5) {
+                Thread { sink.next(i) }.start()
+            }
+            Thread { sink.complete() }.start()
         }
 
         //------------------------------------------------------
-        val pushFlux = Flux.push<Int> {
+        val pushFlux = Flux.push<Int> { sink ->
             //todo: fix following code so it emits values from 0 to 5 and then completes
+            Thread {
+                for (i in 0..5) {
+                    sink.next(i)
+                }
+                sink.complete()
+            }.start()
         }
-        StepVerifier.create(generateFlux)
-            .expectNext(0, 1, 2, 3, 4, 5)
-            .verifyComplete()
-        StepVerifier.create(createFlux)
-            .expectNext(0, 1, 2, 3, 4, 5)
-            .verifyComplete()
-        StepVerifier.create(pushFlux)
-            .expectNext(0, 1, 2, 3, 4, 5)
-            .verifyComplete()
+        StepVerifier.create(generateFlux).expectNext(0, 1, 2, 3, 4, 5).verifyComplete()
+        StepVerifier.create(createFlux).expectNext(0, 1, 2, 3, 4, 5).verifyComplete()
+        StepVerifier.create(pushFlux).expectNext(0, 1, 2, 3, 4, 5).verifyComplete()
     }
 
     /**
@@ -269,17 +246,13 @@ class c5_CreatingSequence {
     @Test
     fun multi_threaded_producer() {
         //todo: find a bug and fix it!
-        val producer = Flux.push { sink: FluxSink<Int?> ->
+        val producer = Flux.create { sink: FluxSink<Int?> ->
             for (i in 0..99) {
                 Thread { sink.next(i) }.start() //don't change this line!
             }
         }
 
         //do not change code below
-        StepVerifier.create(producer
-            .doOnNext { x: Int? -> println(x) }
-            .take(100))
-            .expectNextCount(100)
-            .verifyComplete()
+        StepVerifier.create(producer.doOnNext { x: Int? -> println(x) }.take(100)).expectNextCount(100).verifyComplete()
     }
 }
