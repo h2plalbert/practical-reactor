@@ -243,13 +243,7 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun acid_durability() {
         //todo: feel free to change code as you need
-        val committedTasksIds: Flux<String>? = tasksToExecute().flatMap {
-            it.map { id ->
-                commitTask(id)
-                id
-            }
-        }
-
+        val committedTasksIds: Flux<String>? = tasksToExecute().flatMap(Function.identity()).concatMap { commitTask(it).thenReturn(it)}
 
         //don't change below this line
         StepVerifier.create(committedTasksIds)
@@ -351,8 +345,7 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
         // to get BlockHound works
 
         //todo: feel free to change code as you need
-        val stream = startStreaming()
-            .flatMapMany(Function.identity()).doOnComplete { closeConnection().subscribe() }
+        val stream = Flux.usingWhen(startStreaming(), Function.identity()) { closeConnection() }
 
         //don't change below this line
         StepVerifier.create(stream)

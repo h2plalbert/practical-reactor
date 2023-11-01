@@ -1,7 +1,10 @@
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
 import reactor.core.publisher.Flux
+import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
+import reactor.util.retry.Retry
+import java.time.Duration
 import java.util.concurrent.TimeoutException
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Function
@@ -31,7 +34,8 @@ class c7_ErrorHandling : ErrorHandlingBase() {
     @Test
     fun houston_we_have_a_problem() {
         val errorRef = AtomicReference<Throwable>()
-        val heartBeat = probeHeartBeatSignal() //todo: do your changes here
+        val heartBeat = probeHeartBeatSignal().timeout(Duration.ofSeconds(3))
+            .doOnError { errorRef.set(TimeoutException()) } //todo: do your changes here
         //todo: & here
         StepVerifier.create(heartBeat)
             .expectNextCount(3)
@@ -47,7 +51,7 @@ class c7_ErrorHandling : ErrorHandlingBase() {
      */
     @Test
     fun potato_potato() {
-        val currentUser = currentUser //todo: change this line only
+        val currentUser = currentUser.onErrorMap { SecurityException(it) } //todo: change this line only
         //use SecurityException
         StepVerifier.create(currentUser)
             .expectErrorMatches { e: Throwable -> e is SecurityException && e.cause!!.message == "No active session, user not found!" }
@@ -60,8 +64,7 @@ class c7_ErrorHandling : ErrorHandlingBase() {
      */
     @Test
     fun under_the_rug() {
-        val messages = messageNode()
-        //todo: change this line only
+        val messages = messageNode().onErrorResume { Flux.empty() }//todo: change this line only
         StepVerifier.create(messages)
             .expectNext("0x1", "0x2")
             .verifyComplete()
@@ -74,9 +77,7 @@ class c7_ErrorHandling : ErrorHandlingBase() {
     @Test
     fun have_a_backup() {
         //todo: feel free to change code as you need
-        val messages: Flux<String>? = null
-        messageNode()
-        backupMessageNode()
+        val messages: Flux<String>? = messageNode().onErrorResume { backupMessageNode() }
 
         //don't change below this line
         StepVerifier.create(messages)
@@ -91,8 +92,7 @@ class c7_ErrorHandling : ErrorHandlingBase() {
     @Test
     fun error_reporter() {
         //todo: feel free to change code as you need
-        val messages = messageNode()
-        errorReportService(null!!)
+        val messages = messageNode().onErrorResume { errorReportService(it).then(Mono.error(it)) }
 
         //don't change below this line
         StepVerifier.create(messages)
@@ -109,7 +109,10 @@ class c7_ErrorHandling : ErrorHandlingBase() {
      */
     @Test
     fun unit_of_work() {
-        val taskFlux = taskQueue() //todo: do your changes here
+        val taskFlux = taskQueue().flatMap {
+            it.execute().then(it.commit()).onErrorResume { t -> it.rollback(t) }.thenReturn(it)
+
+        } //todo: do your changes here
         StepVerifier.create(taskFlux)
             .expectNextMatches { task: Task -> task.executedExceptionally.get() && !task.executedSuccessfully.get() }
             .expectNextMatches { task: Task -> task.executedSuccessfully.get() && task.executedSuccessfully.get() }
@@ -124,7 +127,7 @@ class c7_ErrorHandling : ErrorHandlingBase() {
     @Test
     fun billion_dollar_mistake() {
         val content = filesContent
-            .flatMap(Function.identity()) //todo: change this line only
+            .flatMap(Function.identity()).onErrorContinue { t, o -> println(t) } //todo: change this line only
         StepVerifier.create(content)
             .expectNext("file1.txt content", "file3.txt content")
             .verifyComplete()
@@ -144,8 +147,12 @@ class c7_ErrorHandling : ErrorHandlingBase() {
     @Test
     fun resilience() {
         //todo: change code as you need
-        val content = filesContent
-            .flatMap(Function.identity()) //start from here
+        val content = filesContent.flatMap {
+            it.onErrorResume { t ->
+                println(t)
+                Mono.empty()
+            }
+        } //start from here
 
         //don't change below this line
         StepVerifier.create(content)
@@ -159,7 +166,7 @@ class c7_ErrorHandling : ErrorHandlingBase() {
      */
     @Test
     fun its_hot_in_here() {
-        val temperature = temperatureSensor() //todo: change this line only
+        val temperature = temperatureSensor().retry() //todo: change this line only
         StepVerifier.create(temperature)
             .expectNext(34)
             .verifyComplete()
@@ -172,7 +179,8 @@ class c7_ErrorHandling : ErrorHandlingBase() {
      */
     @Test
     fun back_off() {
-        val connection_result = establishConnection() //todo: change this line only
+        val connection_result =
+            establishConnection().retryWhen(Retry.backoff(2, Duration.ofSeconds(5))) //todo: change this line only
         StepVerifier.create(connection_result)
             .expectNext("connection_established")
             .verifyComplete()
@@ -186,8 +194,7 @@ class c7_ErrorHandling : ErrorHandlingBase() {
     @Test
     fun good_old_polling() {
         //todo: change code as you need
-        val alerts: Flux<String>? = null
-        nodeAlerts()
+        val alerts: Flux<String?>? = nodeAlerts().repeatWhenEmpty { it.delayElements(Duration.ofSeconds(1)) }.repeat()
 
         //don't change below this line
         StepVerifier.create(alerts!!.take(2))
