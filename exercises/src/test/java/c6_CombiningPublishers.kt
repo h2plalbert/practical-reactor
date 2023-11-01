@@ -7,6 +7,7 @@ import reactor.core.publisher.Flux
 import reactor.core.publisher.Hooks
 import reactor.core.publisher.Mono
 import reactor.test.StepVerifier
+import java.time.Duration
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Function
@@ -41,9 +42,7 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
         Hooks.enableContextLossTracking() //used for testing - detects if you are cheating!
 
         //todo: feel free to change code as you need
-        val currentUserEmail: Mono<String>? = null
-        val currentUserMono = currentUser
-        getUserEmail(null!!)
+        val currentUserEmail: Mono<String>? = currentUser.flatMap { getUserEmail(it) }
 
         //don't change below this line
         StepVerifier.create(currentUserEmail)
@@ -61,8 +60,7 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun task_executor() {
         //todo: feel free to change code as you need
-        val tasks: Flux<Void>? = null
-        taskExecutor()
+        val tasks: Flux<Void>? = taskExecutor().flatMap { it }
 
         //don't change below this line
         StepVerifier.create(tasks)
@@ -79,8 +77,8 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun streaming_service() {
         //todo: feel free to change code as you need
-        val messageFlux: Flux<Message>? = null
-        streamingService()
+        val messageFlux: Flux<Message>? = streamingService().flatMapMany { it.map { m -> m } }
+
 
         //don't change below this line
         StepVerifier.create(messageFlux)
@@ -97,9 +95,9 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun i_am_rubber_you_are_glue() {
         //todo: feel free to change code as you need
-        val numbers: Flux<Int>? = null
-        numberService1()
-        numberService2()
+        val numbers: Flux<Int>? = numberService1().concatWith(numberService2())
+//        val numbers: Flux<Int>? = Flux.concat(numberService1(),numberService2())
+
 
         //don't change below this line
         StepVerifier.create(numbers)
@@ -123,8 +121,7 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun task_executor_again() {
         //todo: feel free to change code as you need
-        val tasks: Flux<Void>? = null
-        taskExecutor()
+        val tasks: Flux<Void>? = taskExecutor().concatMap { it }
 
         //don't change below this line
         StepVerifier.create(tasks)
@@ -140,9 +137,7 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun need_for_speed() {
         //todo: feel free to change code as you need
-        val stonks: Flux<String>? = null
-        stocksGrpc
-        stocksRest
+        val stonks: Flux<String>? = Flux.firstWithValue(stocksGrpc, stocksRest)
 
         //don't change below this line
         StepVerifier.create(stonks)
@@ -158,9 +153,7 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun plan_b() {
         //todo: feel free to change code as you need
-        val stonks: Flux<String>? = null
-        stocksLocalCache
-        stocksRest
+        val stonks: Flux<String>? = stocksLocalCache.switchIfEmpty(stocksRest)
 
         //don't change below this line
         StepVerifier.create(stonks)
@@ -176,9 +169,9 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun mail_box_switcher() {
         //todo: feel free to change code as you need
-        val myMail: Flux<Message>? = null
-        mailBoxPrimary()
-        mailBoxSecondary()
+        val myMail: Flux<Message>? = mailBoxPrimary().switchOnFirst { t, u ->
+            t.get()?.takeIf { it.metaData == "spam" }?.let { return@switchOnFirst mailBoxSecondary() } ?: u
+        }
 
         //don't change below this line
         StepVerifier.create(myMail)
@@ -198,8 +191,8 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun instant_search() {
         //todo: feel free to change code as you need
-        autoComplete(null!!)
-        val suggestions = userSearchInput() //todo: use one operator only
+        val suggestions =
+            userSearchInput().sample(Duration.ofMillis(10)).flatMap { autoComplete(it) }//todo: use one operator only
 
         //don't change below this line
         StepVerifier.create(suggestions)
@@ -216,10 +209,11 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     fun prettify() {
         //todo: feel free to change code as you need
         //todo: use when,and,then...
-        val successful: Mono<Boolean>? = null
-        openFile()
-        writeToFile("0x3522285912341")
-        closeFile()
+//        val successful: Mono<Boolean>? = openFile().then(writeToFile("0x3522285912341")).then(closeFile()).then(Mono.just(true))
+//        val successful: Mono<Boolean>? = openFile().and(writeToFile("0x3522285912341")).and(closeFile()).then(Mono.just(true))
+        val successful: Mono<Boolean>? =
+            Mono.`when`(openFile(), writeToFile("0x3522285912341"), closeFile()).then(Mono.just(true))
+        // currently do not care about execution order
 
         //don't change below this line
         StepVerifier.create(successful)
@@ -236,9 +230,7 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun one_to_n() {
         //todo: feel free to change code as you need
-        val fileLines: Flux<String>? = null
-        openFile()
-        readFile()
+        val fileLines: Flux<String>? = openFile().thenMany(readFile())
         StepVerifier.create(fileLines)
             .expectNext("0x1", "0x2", "0x3")
             .verifyComplete()
@@ -251,9 +243,13 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun acid_durability() {
         //todo: feel free to change code as you need
-        val committedTasksIds: Flux<String>? = null
-        tasksToExecute()
-        commitTask(null!!)
+        val committedTasksIds: Flux<String>? = tasksToExecute().flatMap {
+            it.map { id ->
+                commitTask(id)
+                id
+            }
+        }
+
 
         //don't change below this line
         StepVerifier.create(committedTasksIds)
@@ -269,8 +265,7 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun major_merger() {
         //todo: feel free to change code as you need
-        val microsoftBlizzardCorp = microsoftTitles()
-        blizzardTitles()
+        val microsoftBlizzardCorp = Flux.merge(microsoftTitles(), blizzardTitles())
 
         //don't change below this line
         StepVerifier.create(microsoftBlizzardCorp)
@@ -295,9 +290,10 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun car_factory() {
         //todo: feel free to change code as you need
-        val producedCars: Flux<Car>? = null
-        carChassisProducer()
-        carEngineProducer()
+        val producedCars: Flux<Car>? = Flux.zip(
+            carChassisProducer(),
+            carEngineProducer()
+        ).map { Car(it.t1, it.t2) }
 
         //don't change below this line
         StepVerifier.create<Car>(producedCars)
@@ -318,9 +314,13 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
 
     //todo: implement this method based on instructions
     fun chooseSource(): Mono<String> {
-        sourceA() //<- choose if sourceRef == "A"
-        sourceB() //<- choose if sourceRef == "B"
-        return Mono.empty() //otherwise, return empty
+        return Mono.defer {
+            when {
+                sourceRef.get() == "A" -> sourceA()
+                sourceRef.get() == "B" -> sourceB()
+                else -> Mono.empty()
+            }
+        }
     }
 
     @Test
@@ -347,11 +347,12 @@ class c6_CombiningPublishers : CombiningPublishersBase() {
     @Test
     fun cleanup() {
         BlockHound.install() //don't change this line, blocking = cheating!
+        // should run test with JDK 17 and add arg -XX:+AllowRedefinitionToAddDeleteMethods
+        // to get BlockHound works
 
         //todo: feel free to change code as you need
         val stream = startStreaming()
-            .flatMapMany(Function.identity())
-        closeConnection()
+            .flatMapMany(Function.identity()).doOnComplete { closeConnection().subscribe() }
 
         //don't change below this line
         StepVerifier.create(stream)

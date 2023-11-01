@@ -66,7 +66,7 @@ open class CombiningPublishersBase {
             .map { i: Int -> "user$i" }
     }
 
-    val stocksLocalCache: Flux<String?>
+    val stocksLocalCache: Flux<String>
         get() = Flux.defer {
             println("(LocalCache) No stocks found in local cache!")
             localCacheCalled.set(true)
